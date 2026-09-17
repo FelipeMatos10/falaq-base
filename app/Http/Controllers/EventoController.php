@@ -27,11 +27,13 @@ class EventoController extends Controller
      */
     public function show($id)
     {
-        $evento = Evento::find($id);
+        $evento = Evento::findOrFail($id);
 
-        // ⚠ BUG LEGADO: Carrega TODOS os registros da tabela no PHP
-        $perguntas = Pergunta::where('evento_id', $id)
-            ->paginate(50);
+        $perguntas = $evento->perguntas()
+            ->where('is_public', true)
+            ->with('user')
+            ->latest()
+            ->paginate(10);
 
         return view('eventos.show', compact('evento', 'perguntas'));
     }
@@ -46,7 +48,7 @@ class EventoController extends Controller
 
         Pergunta::create([
             'evento_id' => $evento->id,
-            'user_id' => Auth::user()->id,
+            'user_id' => Auth::id(),
             'texto'     => $request->input('texto'),
             'status'    => 'pendente',
         ]);
